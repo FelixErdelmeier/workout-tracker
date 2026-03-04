@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Workout Tracker</title>
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#12141b; --muted:#9aa4b2; --text:#e8edf3;
+      --accent:#5eead4; --danger:#fb7185; --border:#222633;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --input:#0f1117;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(94,234,212,.08), transparent 60%),
+                  radial-gradient(900px 500px at 90% 20%, rgba(99,102,241,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:980px; margin:0 auto; padding:20px;}
+    header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:14px 16px; background:rgba(18,20,27,.75); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow); position:sticky; top:12px; z-index:10;
+      backdrop-filter: blur(8px);
+    }
+    header .title{display:flex; flex-direction:column; gap:2px;}
+    header h1{margin:0; font-size:18px; letter-spacing:.2px;}
+    header .sub{color:var(--muted); font-size:12px;}
+    .btn{
+      appearance:none; border:1px solid var(--border); background:transparent; color:var(--text);
+      padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600;
+      transition: transform .05s ease, border-color .15s ease, background .15s ease;
+      display:inline-flex; gap:8px; align-items:center; justify-content:center;
+      user-select:none;
+    }
+    .btn:hover{border-color: rgba(94,234,212,.45); background: rgba(94,234,212,.06);}
+    .btn:active{transform: translateY(1px);}
+    .btn.primary{border-color: rgba(94,234,212,.5); background: rgba(94,234,212,.10);}
+    .btn.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.08);}
+    .btn.ghost{background:transparent;}
+    .grid{display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;}
+    .card{
+      background: rgba(18,20,27,.78); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;
+      backdrop-filter: blur(8px);
+    }
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .muted{color:var(--muted);}
+    .divider{height:1px; background: var(--border); margin:14px 0;}
+    .list{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
+    .workoutItem{
+      display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px;
+      border:1px solid var(--border); border-radius:14px; cursor:pointer;
+      background: rgba(15,17,23,.55);
+      transition: border-color .15s ease, transform .05s ease, background .15s ease;
+    }
+    .workoutItem:hover{border-color: rgba(94,234,212,.40); background: rgba(94,234,212,.05);}
+    .workoutItem:active{transform: translateY(1px);}
+    .workoutItem .name{font-weight:700;}
+    .pill{
+      font-size:12px; color:var(--muted); border:1px solid var(--border);
+      padding:6px 10px; border-radius:999px; white-space:nowrap;
+    }
+
+    /* Editor */
+    .input{
+      width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--border);
+      background: rgba(15,17,23,.7); color: var(--text); outline:none;
+    }
+    .input:focus{border-color: rgba(94,234,212,.55); box-shadow: 0 0 0 3px rgba(94,234,212,.12);}
+    .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    table{
+      width:100%; border-collapse:separate; border-spacing:0 10px;
+    }
+    th{
+      text-align:left; font-size:12px; color:var(--muted); font-weight:700; padding:0 10px 6px 10px;
+    }
+    td{padding:0 10px;}
+    .trRow{
+      background: rgba(15,17,23,.55); border:1px solid var(--border);
+      border-radius:14px; overflow:hidden;
+    }
+    .rowGrid{
+      display:grid; grid-template-columns: 2.2fr 1fr 1fr auto; gap:10px;
+      align-items:center; padding:10px; border:1px solid var(--border); border-radius:14px;
+      background: rgba(15,17,23,.55);
+    }
+    .miniBtn{
+      border:1px solid var(--border); background:transparent; color:var(--text);
+      width:40px; height:40px; border-radius:12px; cursor:pointer; font-weight:900;
+    }
+    .miniBtn:hover{border-color: rgba(251,113,133,.6); background: rgba(251,113,133,.08);}
+    .hint{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.4;}
+    .hidden{display:none !important;}
+
+    /* Modal */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center; padding:18px; z-index:100;
+    }
+    .modal{
+      width:min(520px, 100%); background: rgba(18,20,27,.92);
+      border:1px solid var(--border); border-radius:18px; box-shadow: var(--shadow);
+      padding:16px;
+    }
+    .modal h2{margin:0 0 6px 0; font-size:16px;}
+    .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px; border:1px solid var(--border); border-bottom-width:2px;
+      padding:2px 8px; border-radius:10px; color:var(--muted);
+    }
+
+    @media (max-width: 680px){
+      .rowGrid{grid-template-columns: 1.8fr 1fr 1fr auto;}
+      header{top:0; border-radius:0; border-left:0; border-right:0;}
+      .wrap{padding:12px;}
+      .card{padding:14px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Workout Tracker</h1>
+        <div class="sub">Web App • speichert lokal im Browser (localStorage)</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn ghost" id="btnExport" title="Export als JSON">Export</button>
+        <button class="btn ghost" id="btnImport" title="Import aus JSON">Import</button>
+        <button class="btn danger" id="btnReset" title="Alles löschen">Reset</button>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: Workout Liste -->
+    <section class="grid" id="screenList">
+      <div class="card">
+        <div class="row">
+          <div>
+            <div style="font-weight:800; font-size:16px;">Workouts</div>
+            <div class="muted" style="font-size:12px;">Tippe ein Workout an zum Bearbeiten</div>
+          </div>
+          <button class="btn primary" id="btnNewWorkout">+ New Workout</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="list" id="workoutList"></div>
+
+        <div class="hint">
+          Shortcut: <span class="kbd">N</span> neues Workout • <span class="kbd">Esc</span> zurück •
+          Offline-fähig, solange du die Seite im Browser geöffnet/gespeichert hast.
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: Workout Editor -->
+    <section class="grid hidden" id="screenEditor">
+      <div class="card">
+        <div class="row">
+          <div style="min-width:220px; flex:1;">
+            <div class="muted" style="font-size:12px;">Workout Name</div>
+            <input class="input" id="workoutName" placeholder="z.B. Push Day" />
+          </div>
+          <div class="toolbar">
+            <button class="btn" id="btnBack">← Back</button>
+            <button class="btn primary" id="btnAddExercise">+ Add Exercise</button>
+            <button class="btn danger" id="btnDeleteWorkout">Delete Workout</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="muted" style="font-size:12px; margin-bottom:8px;">Exercise Name • Reps • Weight</div>
+        <div id="exerciseContainer"></div>
+
+        <div class="hint">
+          Eingaben werden automatisch gespeichert. Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: New Workout -->
+  <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <h2>Neues Workout</h2>
+      <div class="muted" style="font-size:12px; margin-bottom:10px;">Gib einen Namen ein (du kannst ihn später ändern).</div>
+      <input class="input" id="newWorkoutName" placeholder="z.B. Pull Day" />
+      <div class="actions">
+        <button class="btn" id="btnModalCancel">Cancel</button>
+        <button class="btn primary" id="btnModalCreate">Create</button>
+      </div>
+      <div class="hint">Shortcut: <span class="kbd">Enter</span> erstellen • <span class="kbd">Esc</span> schließen</div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for Import -->
+  <input type="file" id="fileInput" accept="application/json" class="hidden" />
+
+  <script>
+    /**********************
+     * Data Model + Storage
+     **********************/
+    const STORAGE_KEY = "workout-tracker.v1";
+
+    /** @typedef {{id:string, name:string, reps:number|null, weight:number|null}} Exercise */
+    /** @typedef {{id:string, name:string, createdAt:number, exercises:Exercise[]}} Workout */
+    /** @typedef {{workouts:Workout[], selectedId:string|null}} AppState */
+
+    /** @type {AppState} */
+    let state = loadState();
+
+    function uid(){
+      // good enough for local IDs
+      return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+    }
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return { workouts: [], selectedId: null };
+        const parsed = JSON.parse(raw);
+        if(!parsed || !Array.isArray(parsed.workouts)) return { workouts: [], selectedId: null };
+        return { workouts: parsed.workouts, selectedId: parsed.selectedId ?? null };
+      }catch{
+        return { workouts: [], selectedId: null };
+      }
+    }
+
+    function saveState(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getSelectedWorkout(){
+      if(!state.selectedId) return null;
+      return state.workouts.find(w => w.id === state.selectedId) ?? null;
+    }
+
+    /**********************
+     * UI Elements
+     **********************/
+    const screenList = document.getElementById("screenList");
+    const screenEditor = document.getElementById("screenEditor");
+
+    const workoutListEl = document.getElementById("workoutList");
+    const btnNewWorkout = document.getElementById("btnNewWorkout");
+
+    const btnBack = document.getElementById("btnBack");
+    const workoutNameInput = document.getElementById("workoutName");
+    const exerciseContainer = document.getElementById("exerciseContainer");
+    const btnAddExercise = document.getElementById("btnAddExercise");
+    const btnDeleteWorkout = document.getElementById("btnDeleteWorkout");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const newWorkoutNameInput = document.getElementById("newWorkoutName");
+    const btnModalCancel = document.getElementById("btnModalCancel");
+    const btnModalCreate = document.getElementById("btnModalCreate");
+
+    const btnReset = document.getElementById("btnReset");
+    const btnExport = document.getElementById("btnExport");
+    const btnImport = document.getElementById("btnImport");
+    const fileInput = document.getElementById("fileInput");
+
+    /**********************
+     * Rendering
+     **********************/
+    function showList(){
+      screenList.classList.remove("hidden");
+      screenEditor.classList.add("hidden");
+      state.selectedId = null;
+      saveState();
+      renderList();
+    }
+
+    function showEditor(workoutId){
+      state.selectedId = workoutId;
+      saveState();
+      screenList.classList.add("hidden");
+      screenEditor.classList.remove("hidden");
+      renderEditor();
+    }
+
+    function renderList(){
+      // empty state
+      workoutListEl.innerHTML = "";
+      if(state.workouts.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.style.padding = "10px 2px";
+        empty.textContent = "Noch keine Workouts. Klicke auf „+ New Workout“.";
+        workoutListEl.appendChild(empty);
+        return;
+      }
+
+      // sort by newest
+      const workoutsSorted = [...state.workouts].sort((a,b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
+      for(const w of workoutsSorted){
+        const item = document.createElement("div");
+        item.className = "workoutItem";
+        item.tabIndex = 0;
+
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.flexDirection = "column";
+        left.style.gap = "3px";
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = w.name?.trim() ? w.name : "Untitled Workout";
+
+        const meta = document.createElement("div");
+        meta.className = "muted";
+        meta.style.fontSize = "12px";
+        const n = (w.exercises?.length ?? 0);
+        meta.textContent = `${n} ${n===1 ? "Exercise" : "Exercises"}`;
+
+        left.appendChild(name);
+        left.appendChild(meta);
+
+        const right = document.createElement("div");
+        right.className = "pill";
+        const dt = new Date(w.createdAt || Date.now());
+        right.textContent = dt.toLocaleDateString("de-DE");
+
+        item.appendChild(left);
+        item.appendChild(right);
+
+        item.addEventListener("click", () => showEditor(w.id));
+        item.addEventListener("keydown", (e) => {
+          if(e.key === "Enter" || e.key === " "){
+            e.preventDefault();
+            showEditor(w.id);
+          }
+        });
+
+        workoutListEl.appendChild(item);
+      }
+    }
+
+    function renderEditor(){
+      const w = getSelectedWorkout();
+      if(!w){
+        showList();
+        return;
+      }
+      workoutNameInput.value = w.name ?? "";
+      exerciseContainer.innerHTML = "";
+
+      if(!Array.isArray(w.exercises)) w.exercises = [];
+
+      if(w.exercises.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.style.padding = "10px 2px";
+        empty.textContent = "Noch keine Übungen. Klicke auf „+ Add Exercise“.";
+        exerciseContainer.appendChild(empty);
+        return;
+      }
+
+      // header row (simple, mobile-friendly)
+      const header = document.createElement("div");
+      header.style.display = "grid";
+      header.style.gridTemplateColumns = "2.2fr 1fr 1fr auto";
+      header.style.gap = "10px";
+      header.style.padding = "0 10px 6px 10px";
+      header.style.color = "var(--muted)";
+      header.style.fontSize = "12px";
+      header.style.fontWeight = "700";
+      header.innerHTML = "<div>Exercise</div><div>Reps</div><div>Weight</div><div></div>";
+      exerciseContainer.appendChild(header);
+
+      for(const ex of w.exercises){
+        const row = document.createElement("div");
+        row.className = "rowGrid";
+
+        const nameInput = document.createElement("input");
+        nameInput.className = "input";
+        nameInput.placeholder = "z.B. Bench Press";
+        nameInput.value = ex.name ?? "";
+        nameInput.addEventListener("input", () => {
+          ex.name = nameInput.value;
+          saveState();
+          // list view meta may depend on exercise length -> keep it accurate
+          renderList();
+        });
+
+        const repsInput = document.createElement("input");
+        repsInput.className = "input";
+        repsInput.placeholder = "10";
+        repsInput.inputMode = "numeric";
+        repsInput.value = (ex.reps ?? "") === "" ? "" : String(ex.reps);
+        repsInput.addEventListener("input", () => {
+          const v = repsInput.value.trim();
+          if(v === "") ex.reps = null;
+          else{
+            const n = Number(v);
+            ex.reps = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+          }
+          saveState();
+        });
+
+        const weightInput = document.createElement("input");
+        weightInput.className = "input";
+        weightInput.placeholder = "80";
+        weightInput.inputMode = "decimal";
+        weightInput.value = (ex.weight ?? "") === "" ? "" : String(ex.weight);
+        weightInput.addEventListener("input", () => {
+          const v = weightInput.value.trim().replace(",", ".");
+          if(v === "") ex.weight = null;
+          else{
+            const n = Number(v);
+            ex.weight = Number.isFinite(n) ? Math.max(0, n) : null;
+          }
+          saveState();
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "miniBtn";
+        delBtn.title = "Übung löschen";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => {
+          w.exercises = w.exercises.filter(e => e.id !== ex.id);
+          saveState();
+          renderEditor();
+          renderList();
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(repsInput);
+        row.appendChild(weightInput);
+        row.appendChild(delBtn);
+
+        exerciseContainer.appendChild(row);
+      }
+    }
+
+    /**********************
+     * Actions
+     **********************/
+    function openModal(){
+      modalOverlay.classList.remove("hidden");
+      modalOverlay.setAttribute("aria-hidden", "false");
+      newWorkoutNameInput.value = "";
+      newWorkoutNameInput.focus();
+    }
+
+    function closeModal(){
+      modalOverlay.classList.add("hidden");
+      modalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    function createWorkout(name){
+      const workout = {
+        id: uid(),
+        name: (name ?? "").trim() || "Untitled Workout",
+        createdAt: Date.now(),
+        exercises: []
+      };
+      state.workouts.push(workout);
+      saveState();
+      renderList();
+      showEditor(workout.id);
+      // start with one row to match typical flow
+      addExercise();
+      // focus first exercise name
+      setTimeout(() => {
+        const firstInput = exerciseContainer.querySelector("input");
+        if(firstInput) firstInput.focus();
+      }, 0);
+    }
+
+    function addExercise(){
+      const w = getSelectedWorkout();
+      if(!w) return;
+      if(!Array.isArray(w.exercises)) w.exercises = [];
+      w.exercises.push({ id: uid(), name: "", reps: null, weight: null });
+      saveState();
+      renderEditor();
+      renderList();
+    }
+
+    function deleteSelectedWorkout(){
+      const w = getSelectedWorkout();
+      if(!w) return;
+      const ok = confirm(`Workout wirklich löschen?\n\n"${w.name || "Untitled Workout"}"`);
+      if(!ok) return;
+      state.workouts = state.workouts.filter(x => x.id !== w.id);
+      state.selectedId = null;
+      saveState();
+      showList();
+    }
+
+    function resetAll(){
+      const ok = confirm("Wirklich ALLES löschen? (Alle Workouts gehen verloren)");
+      if(!ok) return;
+      state = { workouts: [], selectedId: null };
+      saveState();
+      showList();
+    }
+
+    function exportJson(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "workout-tracker-export.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJsonFromFile(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const parsed = JSON.parse(String(reader.result || "{}"));
+          if(!parsed || !Array.isArray(parsed.workouts)) throw new Error("Invalid format");
+          // basic normalization
+          const workouts = parsed.workouts.map(w => ({
+            id: String(w.id || uid()),
+            name: String(w.name || "Untitled Workout"),
+            createdAt: Number(w.createdAt || Date.now()),
+            exercises: Array.isArray(w.exercises) ? w.exercises.map(ex => ({
+              id: String(ex.id || uid()),
+              name: String(ex.name || ""),
+              reps: (ex.reps === null || ex.reps === undefined || ex.reps === "") ? null : Math.max(0, Math.floor(Number(ex.reps))),
+              weight: (ex.weight === null || ex.weight === undefined || ex.weight === "") ? null : Math.max(0, Number(String(ex.weight).replace(",", ".")))
+            })) : []
+          }));
+          state = { workouts, selectedId: null };
+          saveState();
+          showList();
+          alert("Import erfolgreich.");
+        }catch{
+          alert("Import fehlgeschlagen: Datei ist kein gültiger Export.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /**********************
+     * Event Wiring
+     **********************/
+    btnNewWorkout.addEventListener("click", openModal);
+
+    btnModalCancel.addEventListener("click", closeModal);
+    btnModalCreate.addEventListener("click", () => {
+      createWorkout(newWorkoutNameInput.value);
+      closeModal();
+    });
+
+    modalOverlay.addEventListener("click", (e) => {
+      if(e.target === modalOverlay) closeModal();
+    });
+
+    newWorkoutNameInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        createWorkout(newWorkoutNameInput.value);
+        closeModal();
+      } else if(e.key === "Escape"){
+        e.preventDefault();
+        closeModal();
+      }
+    });
+
+    btnBack.addEventListener("click", showList);
+    btnAddExercise.addEventListener("click", addExercise);
+    btnDeleteWorkout.addEventListener("click", deleteSelectedWorkout);
+
+    workoutNameInput.addEventListener("input", () => {
+      const w = getSelectedWorkout();
+      if(!w) return;
+      w.name = workoutNameInput.value;
+      saveState();
+      renderList();
+    });
+
+    btnReset.addEventListener("click", resetAll);
+    btnExport.addEventListener("click", exportJson);
+    btnImport.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files && fileInput.files[0];
+      if(f) importJsonFromFile(f);
+      fileInput.value = "";
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "n" || e.key === "N"){
+        if(modalOverlay.classList.contains("hidden") && !screenEditor.classList.contains("hidden")){
+          // in editor: add exercise
+          addExercise();
+        } else if(modalOverlay.classList.contains("hidden")) {
+          openModal();
+        }
+      }
+      if(e.key === "Escape"){
+        if(!modalOverlay.classList.contains("hidden")){
+          closeModal();
+        } else if(!screenEditor.classList.contains("hidden")){
+          showList();
+        }
+      }
+    });
+
+    /**********************
+     * Initial Render
+     **********************/
+    (function init(){
+      renderList();
+      // If there was a selected workout previously, open it (nice UX)
+      const maybe = getSelectedWorkout();
+      if(maybe) showEditor(maybe.id);
+    })();
+  </script>
+</body>
+</html>
