@@ -179,7 +179,39 @@
 
         <div class="muted" style="font-size:12px; margin-bottom:8px;">Exercise Name • Reps • Weight</div>
         <div id="exerciseContainer"></div>
-        <div id="timerDisplay" style="font-size:28px;margin-top:15px;"></div>
+        <div id="timerContainer" style="margin-top:20px;text-align:center;">
+
+        <svg width="160" height="160">
+
+        <circle
+          cx="80"
+          cy="80"
+          r="70"
+          stroke="#333"
+          stroke-width="10"
+          fill="none"
+        />
+
+        <circle
+          id="timerCircle"
+          cx="80"
+          cy="80"
+          r="70"
+          stroke="#5eead4"
+          stroke-width="10"
+          fill="none"
+          stroke-linecap="round"
+          stroke-dasharray="440"
+          stroke-dashoffset="0"
+        />
+
+        </svg>
+
+        <div id="timerDisplay" style="font-size:32px;margin-top:10px;">
+        3:00
+        </div>
+
+        </div>
 
         <div class="hint">
           Eingaben werden automatisch gespeichert. Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
@@ -271,12 +303,16 @@
     // TIMER ELEMENTE
     const btnTimer = document.getElementById("btnTimer");
     const timerDisplay = document.getElementById("timerDisplay");
+    const timerCircle = document.getElementById("timerCircle");
 
     let timerInterval = null;
 
     btnTimer.addEventListener("click", () => {
 
-      let remaining = 180;
+      let duration = 180;
+      let remaining = duration;
+
+      const circumference = 440;
 
       clearInterval(timerInterval);
 
@@ -288,13 +324,20 @@
         timerDisplay.textContent =
           minutes + ":" + String(seconds).padStart(2,"0");
 
+        const progress = remaining / duration;
+        timerCircle.style.strokeDashoffset =
+          circumference * (1 - progress);
+
         remaining--;
 
         if(remaining < 0){
+
           clearInterval(timerInterval);
-          timerDisplay.textContent = "Rest finished ✔";
+
+          timerDisplay.textContent = "GO";
 
           alert("Pause vorbei — nächster Satz!");
+
         }
 
       },1000);
