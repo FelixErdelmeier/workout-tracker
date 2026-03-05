@@ -147,7 +147,6 @@
             <div class="muted" style="font-size:12px;">Tippe ein Workout an zum Bearbeiten</div>
           </div>
           <button class="btn primary" id="btnNewWorkout">+ New Workout</button>
-          <button class="btn" id="btnTimer">⏱ Rest Timer</button>
         </div>
 
         <div class="divider"></div>
@@ -172,6 +171,9 @@
           <div class="toolbar">
             <button class="btn" id="btnBack">← Back</button>
             <button class="btn primary" id="btnAddExercise">+ Add Exercise</button>
+            <button class="btn" id="btnStartTimer">▶ Start</button>
+            <button class="btn" id="btnPauseTimer">⏸ Pause</button>
+            <button class="btn" id="btnResetTimer">↺ Reset</button>
             <button class="btn danger" id="btnDeleteWorkout">Delete Workout</button>
           </div>
         </div>
@@ -301,41 +303,87 @@
     const btnExport = document.getElementById("btnExport");
     const btnImport = document.getElementById("btnImport");
     const fileInput = document.getElementById("fileInput");
+
     // TIMER ELEMENTE
-    const btnTimer = document.getElementById("btnTimer");
-    const timerDisplay = document.getElementById("globalTimer");
+    const btnStartTimer = document.getElementById("btnStartTimer");
+    const btnPauseTimer = document.getElementById("btnPauseTimer");
+    const btnResetTimer = document.getElementById("btnResetTimer");
+
+    const globalTimer = document.getElementById("globalTimer");
+    const timerDisplay = document.getElementById("timerDisplay");
     const timerCircle = document.getElementById("timerCircle");
 
     let timerInterval = null;
 
-    btnTimer.addEventListener("click", () => {
+    let duration = 180;
+    let remaining = duration;
 
-      let duration = 180;
-      let remaining = duration;
+    const circumference = 440;
 
-      const circumference = 440;
+    function updateTimerDisplay(){
+
+      let minutes = Math.floor(remaining / 60);
+      let seconds = remaining % 60;
+
+      let timeString =
+        minutes + ":" + String(seconds).padStart(2,"0");
+
+      if(timerDisplay){
+        timerDisplay.textContent = timeString;
+      }
+
+      if(globalTimer){
+        globalTimer.textContent = "⏱ " + timeString;
+      }
+
+      const progress = remaining / duration;
+
+      if(timerCircle){
+        timerCircle.style.strokeDashoffset =
+          circumference * (1 - progress);
+      }
+
+      // Farbwechsel nach Minuten
+      if(timerCircle){
+
+        if(remaining > 120){
+          timerCircle.style.stroke = "#22c55e"; // grün
+        }
+
+        else if(remaining > 60){
+          timerCircle.style.stroke = "#f97316"; // orange
+        }
+
+        else{
+          timerCircle.style.stroke = "#ef4444"; // rot
+        }
+
+      }
+
+    }
+
+    btnStartTimer.addEventListener("click", () => {
 
       clearInterval(timerInterval);
 
       timerInterval = setInterval(() => {
 
-        let minutes = Math.floor(remaining / 60);
-        let seconds = remaining % 60;
-
-        timerDisplay.textContent =
-          minutes + ":" + String(seconds).padStart(2,"0");
-
-        const progress = remaining / duration;
-        timerCircle.style.strokeDashoffset =
-          circumference * (1 - progress);
-
         remaining--;
 
-        if(remaining < 0){
+        updateTimerDisplay();
+
+        if(remaining <= 0){
 
           clearInterval(timerInterval);
 
-          timerDisplay.textContent = "GO";
+          if(timerDisplay) timerDisplay.textContent = "GO";
+
+          if(globalTimer) globalTimer.textContent = "";
+
+          // iPhone vibration
+          if(navigator.vibrate){
+            navigator.vibrate([200,100,200]);
+          }
 
           alert("Pause vorbei — nächster Satz!");
 
@@ -344,6 +392,24 @@
       },1000);
 
     });
+
+    btnPauseTimer.addEventListener("click", () => {
+
+      clearInterval(timerInterval);
+
+    });
+
+    btnResetTimer.addEventListener("click", () => {
+
+      clearInterval(timerInterval);
+
+      remaining = duration;
+
+      updateTimerDisplay();
+
+    });
+
+updateTimerDisplay();
     /**********************
      * Rendering
      **********************/
