@@ -121,6 +121,40 @@
       .wrap{padding:12px;}
       .card{padding:14px;}
     }
+    #timerBottomBar{
+    position: sticky;
+    bottom: 12px;
+    margin-top: 14px;
+
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    gap: 12px;
+
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(18,20,27,.92);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    z-index: 20;
+  }
+
+  #timerMini{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(15,17,23,.55);
+  }
+
+  #timerBottomText{
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: .2px;
+  }
   </style>
 </head>
 <body>
@@ -134,7 +168,6 @@
         <button class="btn ghost" id="btnExport" title="Export als JSON">Export</button>
         <button class="btn ghost" id="btnImport" title="Import aus JSON">Import</button>
         <button class="btn danger" id="btnReset" title="Alles löschen">Reset</button>
-        <div id="globalTimer"></div>
       </div>
     </header>
 
@@ -171,9 +204,6 @@
           <div class="toolbar">
             <button class="btn" id="btnBack">← Back</button>
             <button class="btn primary" id="btnAddExercise">+ Add Exercise</button>
-            <button class="btn" id="btnStartTimer">▶ Start</button>
-            <button class="btn" id="btnPauseTimer">⏸ Pause</button>
-            <button class="btn" id="btnResetTimer">↺ Reset</button>
             <button class="btn danger" id="btnDeleteWorkout">Delete Workout</button>
           </div>
         </div>
@@ -218,6 +248,18 @@
 
         <div class="hint">
           Eingaben werden automatisch gespeichert. Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
+        </div>
+      </div>
+
+      <div id="timerBottomBar">
+        <div id="timerMini">
+          <span id="timerBottomText">3:00</span>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button class="btn primary" id="btnStartTimer">Start</button>
+          <button class="btn" id="btnPauseTimer">Stop</button>
+          <button class="btn danger" id="btnResetTimer">Reset</button>
         </div>
       </div>
     </section>
@@ -308,8 +350,7 @@
     const btnStartTimer = document.getElementById("btnStartTimer");
     const btnPauseTimer = document.getElementById("btnPauseTimer");
     const btnResetTimer = document.getElementById("btnResetTimer");
-
-    const globalTimer = document.getElementById("globalTimer");
+    const timerBottomText = document.getElementById("timerBottomText");
     const timerDisplay = document.getElementById("timerDisplay");
     const timerCircle = document.getElementById("timerCircle");
 
@@ -331,9 +372,8 @@
       if(timerDisplay){
         timerDisplay.textContent = timeString;
       }
-
-      if(globalTimer){
-        globalTimer.textContent = "⏱ " + timeString;
+      if(timerBottomText){
+        timerBottomText.textContent = timeString;
       }
 
       const progress = remaining / duration;
@@ -378,7 +418,6 @@
 
           if(timerDisplay) timerDisplay.textContent = "GO";
 
-          if(globalTimer) globalTimer.textContent = "";
 
           // iPhone vibration
           if(navigator.vibrate){
