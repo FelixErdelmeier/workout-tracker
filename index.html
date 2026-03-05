@@ -134,6 +134,7 @@
         <button class="btn ghost" id="btnExport" title="Export als JSON">Export</button>
         <button class="btn ghost" id="btnImport" title="Import aus JSON">Import</button>
         <button class="btn danger" id="btnReset" title="Alles löschen">Reset</button>
+        <div id="globalTimer"></div>
       </div>
     </header>
 
@@ -302,7 +303,7 @@
     const fileInput = document.getElementById("fileInput");
     // TIMER ELEMENTE
     const btnTimer = document.getElementById("btnTimer");
-    const timerDisplay = document.getElementById("timerDisplay");
+    const timerDisplay = document.getElementById("globalTimer");
     const timerCircle = document.getElementById("timerCircle");
 
     let timerInterval = null;
