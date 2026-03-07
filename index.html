@@ -155,6 +155,20 @@
     font-size: 18px;
     letter-spacing: .2px;
   }
+  #editorTopBar{
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+
+    background: rgba(18,20,27,.92);
+    border:1px solid var(--border);
+    border-radius:14px;
+
+    padding:10px;
+    margin-bottom:12px;
+
+    backdrop-filter: blur(6px);
+  }
   </style>
 </head>
 <body>
@@ -165,12 +179,16 @@
         <div class="sub">Web App • speichert lokal im Browser (localStorage)</div>
       </div>
       <div class="toolbar">
-        <button class="btn ghost" id="btnExport" title="Export als JSON">Export</button>
-        <button class="btn ghost" id="btnImport" title="Import aus JSON">Import</button>
-        <button class="btn danger" id="btnReset" title="Alles löschen">Reset</button>
+        <div id="overviewControls">
+
+        <button class="btn ghost" id="btnExport">Export</button>
+        <button class="btn ghost" id="btnImport">Import</button>
+        <button class="btn danger" id="btnReset">Reset</button>
+
+        </div>
       </div>
     </header>
-
+    
     <!-- SCREEN 1: Workout Liste -->
     <section class="grid" id="screenList">
       <div class="card">
@@ -185,18 +203,13 @@
         <div class="divider"></div>
 
         <div class="list" id="workoutList"></div>
-
-        <div class="hint">
-          Shortcut: <span class="kbd">N</span> neues Workout • <span class="kbd">Esc</span> zurück •
-          Offline-fähig, solange du die Seite im Browser geöffnet/gespeichert hast.
-        </div>
       </div>
     </section>
 
     <!-- SCREEN 2: Workout Editor -->
     <section class="grid hidden" id="screenEditor">
       <div class="card">
-        <div class="row">
+        <div id="editorTopBar" class="row">
           <div style="min-width:220px; flex:1;">
             <div class="muted" style="font-size:12px;">Workout Name</div>
             <input class="input" id="workoutName" placeholder="z.B. Push Day" />
@@ -247,7 +260,7 @@
         </div>
 
         <div class="hint">
-          Eingaben werden automatisch gespeichert. Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
+          Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
         </div>
       </div>
 
@@ -275,7 +288,6 @@
         <button class="btn" id="btnModalCancel">Cancel</button>
         <button class="btn primary" id="btnModalCreate">Create</button>
       </div>
-      <div class="hint">Shortcut: <span class="kbd">Enter</span> erstellen • <span class="kbd">Esc</span> schließen</div>
     </div>
   </div>
 
@@ -416,15 +428,13 @@
 
           clearInterval(timerInterval);
 
-          if(timerDisplay) timerDisplay.textContent = "GO";
+          remaining = duration;
 
+          updateTimerDisplay();
 
-          // iPhone vibration
           if(navigator.vibrate){
             navigator.vibrate([200,100,200]);
           }
-
-          alert("Pause vorbei — nächster Satz!");
 
         }
 
@@ -455,6 +465,7 @@ updateTimerDisplay();
     function showList(){
       screenList.classList.remove("hidden");
       screenEditor.classList.add("hidden");
+      document.getElementById("overviewControls").style.display = "flex";
       state.selectedId = null;
       saveState();
       renderList();
@@ -465,6 +476,7 @@ updateTimerDisplay();
       saveState();
       screenList.classList.add("hidden");
       screenEditor.classList.remove("hidden");
+      document.getElementById("overviewControls").style.display = "none";
       renderEditor();
     }
 
