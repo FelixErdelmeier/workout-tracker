@@ -225,37 +225,7 @@
 
         <div class="muted" style="font-size:12px; margin-bottom:8px;">Exercise Name • Reps • Weight</div>
         <div id="exerciseContainer"></div>
-        <div id="timerContainer" style="margin-top:20px;text-align:center;">
 
-        <svg width="160" height="160">
-
-        <circle
-          cx="80"
-          cy="80"
-          r="70"
-          stroke="#333"
-          stroke-width="10"
-          fill="none"
-        />
-
-        <circle
-          id="timerCircle"
-          cx="80"
-          cy="80"
-          r="70"
-          stroke="#5eead4"
-          stroke-width="10"
-          fill="none"
-          stroke-linecap="round"
-          stroke-dasharray="440"
-          stroke-dashoffset="0"
-        />
-
-        </svg>
-
-        <div id="timerDisplay" style="font-size:32px;margin-top:10px;">
-        3:00
-        </div>
 
         </div>
 
@@ -360,103 +330,75 @@
 
     // TIMER ELEMENTE
     const btnStartTimer = document.getElementById("btnStartTimer");
-    const btnPauseTimer = document.getElementById("btnPauseTimer");
-    const btnResetTimer = document.getElementById("btnResetTimer");
-    const timerBottomText = document.getElementById("timerBottomText");
-    const timerDisplay = document.getElementById("timerDisplay");
-    const timerCircle = document.getElementById("timerCircle");
+const btnPauseTimer = document.getElementById("btnPauseTimer");
+const btnResetTimer = document.getElementById("btnResetTimer");
 
-    let timerInterval = null;
+const timerBottomText = document.getElementById("timerBottomText");
 
-    let duration = 180;
-    let remaining = duration;
+let duration = 180;
+let endTime = null;
+let timerInterval = null;
 
-    const circumference = 440;
+function updateTimer(){
 
-    function updateTimerDisplay(){
+  if(!endTime) return;
 
-      let minutes = Math.floor(remaining / 60);
-      let seconds = remaining % 60;
+  let remaining = Math.round((endTime - Date.now()) / 1000);
 
-      let timeString =
-        minutes + ":" + String(seconds).padStart(2,"0");
+  if(remaining <= 0){
 
-      if(timerDisplay){
-        timerDisplay.textContent = timeString;
-      }
-      if(timerBottomText){
-        timerBottomText.textContent = timeString;
-      }
+    remaining = 0;
 
-      const progress = remaining / duration;
+    clearInterval(timerInterval);
 
-      if(timerCircle){
-        timerCircle.style.strokeDashoffset =
-          circumference * (1 - progress);
-      }
-
-      // Farbwechsel nach Minuten
-      if(timerCircle){
-
-        if(remaining > 120){
-          timerCircle.style.stroke = "#22c55e"; // grün
-        }
-
-        else if(remaining > 60){
-          timerCircle.style.stroke = "#f97316"; // orange
-        }
-
-        else{
-          timerCircle.style.stroke = "#ef4444"; // rot
-        }
-
-      }
-
+    if(navigator.vibrate){
+      navigator.vibrate([200,100,200]);
     }
 
-    btnStartTimer.addEventListener("click", () => {
+    // automatisch resetten
+    endTime = null;
 
-      clearInterval(timerInterval);
+  }
 
-      timerInterval = setInterval(() => {
+  let minutes = Math.floor(remaining / 60);
+  let seconds = remaining % 60;
 
-        remaining--;
+  let timeString =
+    minutes + ":" + String(seconds).padStart(2,"0");
 
-        updateTimerDisplay();
+  if(timerBottomText){
+    timerBottomText.textContent = timeString;
+  }
 
-        if(remaining <= 0){
+}
 
-          clearInterval(timerInterval);
+btnStartTimer.addEventListener("click", () => {
 
-          remaining = duration;
+  endTime = Date.now() + duration * 1000;
 
-          updateTimerDisplay();
+  clearInterval(timerInterval);
 
-          if(navigator.vibrate){
-            navigator.vibrate([200,100,200]);
-          }
+  timerInterval = setInterval(updateTimer, 500);
 
-        }
+});
 
-      },1000);
+btnPauseTimer.addEventListener("click", () => {
 
-    });
+  clearInterval(timerInterval);
 
-    btnPauseTimer.addEventListener("click", () => {
+});
 
-      clearInterval(timerInterval);
+btnResetTimer.addEventListener("click", () => {
 
-    });
+  clearInterval(timerInterval);
 
-    btnResetTimer.addEventListener("click", () => {
+  endTime = null;
 
-      clearInterval(timerInterval);
+  if(timerBottomText){
+    timerBottomText.textContent = "3:00";
+  }
 
-      remaining = duration;
-
-      updateTimerDisplay();
-
-    });
+});
 
 updateTimerDisplay();
     /**********************
