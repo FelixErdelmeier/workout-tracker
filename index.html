@@ -42,6 +42,7 @@
     .btn.primary{border-color: rgba(94,234,212,.5); background: rgba(94,234,212,.10);}
     .btn.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.08);}
     .btn.ghost{background:transparent;}
+    .btn.large{padding:16px 24px; font-size:16px; font-weight:700; height:80px;}
     .grid{display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;}
     .card{
       background: rgba(18,20,27,.78); border:1px solid var(--border);
@@ -52,123 +53,104 @@
     .muted{color:var(--muted);}
     .divider{height:1px; background: var(--border); margin:14px 0;}
     .list{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
-    .workoutItem{
-      display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px;
-      border:1px solid var(--border); border-radius:14px; cursor:pointer;
-      background: rgba(15,17,23,.55);
-      transition: border-color .15s ease, transform .05s ease, background .15s ease;
-    }
-    .workoutItem:hover{border-color: rgba(94,234,212,.40); background: rgba(94,234,212,.05);}
-    .workoutItem:active{transform: translateY(1px);}
-    .workoutItem .name{font-weight:700;}
-    .pill{
-      font-size:12px; color:var(--muted); border:1px solid var(--border);
-      padding:6px 10px; border-radius:999px; white-space:nowrap;
-    }
-
-    /* Editor */
+    
     .input{
       width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--border);
       background: rgba(15,17,23,.7); color: var(--text); outline:none;
     }
     .input:focus{border-color: rgba(94,234,212,.55); box-shadow: 0 0 0 3px rgba(94,234,212,.12);}
     .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    table{
-      width:100%; border-collapse:separate; border-spacing:0 10px;
-    }
-    th{
-      text-align:left; font-size:12px; color:var(--muted); font-weight:700; padding:0 10px 6px 10px;
-    }
-    td{padding:0 10px;}
-    .trRow{
-      background: rgba(15,17,23,.55); border:1px solid var(--border);
-      border-radius:14px; overflow:hidden;
-    }
-    .rowGrid{
-      display:grid; grid-template-columns: 2.2fr 1fr 1fr auto; gap:10px;
-      align-items:center; padding:10px; border:1px solid var(--border); border-radius:14px;
-      background: rgba(15,17,23,.55);
-    }
-    .miniBtn{
-      border:1px solid var(--border); background:transparent; color:var(--text);
-      width:40px; height:40px; border-radius:12px; cursor:pointer; font-weight:900;
-    }
-    .miniBtn:hover{border-color: rgba(251,113,133,.6); background: rgba(251,113,133,.08);}
     .hint{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.4;}
     .hidden{display:none !important;}
 
-    /* Modal */
-    .overlay{
-      position:fixed; inset:0; background:rgba(0,0,0,.55);
-      display:flex; align-items:center; justify-content:center; padding:18px; z-index:100;
+    /* Selection Screen */
+    .selectionGrid{
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-top: 24px;
     }
-    .modal{
-      width:min(520px, 100%); background: rgba(18,20,27,.92);
-      border:1px solid var(--border); border-radius:18px; box-shadow: var(--shadow);
-      padding:16px;
+    .workoutCard{
+      border: 2px solid var(--border);
+      background: rgba(15,17,23,.55);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: center;
     }
-    .modal h2{margin:0 0 6px 0; font-size:16px;}
-    .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;}
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:12px; border:1px solid var(--border); border-bottom-width:2px;
-      padding:2px 8px; border-radius:10px; color:var(--muted);
+    .workoutCard:hover{
+      border-color: rgba(94,234,212,.5);
+      background: rgba(94,234,212,.08);
+      transform: translateY(-2px);
+    }
+    .workoutCard .name{
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .workoutCard .desc{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Workout Session Screen */
+    .exerciseItem{
+      background: rgba(15,17,23,.55);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .exerciseTitle{
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .exerciseInfo{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .exerciseInputGroup{
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .volumeDisplay{
+      font-size: 12px;
+      color: var(--accent);
+      padding: 6px 10px;
+      background: rgba(94,234,212,.1);
+      border-radius: 8px;
+      border: 1px solid rgba(94,234,212,.3);
+    }
+    .suggestedWeight{
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: rgba(94,234,212,.08);
+      border-radius: 8px;
+      border-left: 2px solid var(--accent);
+    }
+
+    .sessionHeader{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .backBtn{
+      padding: 10px 12px;
     }
 
     @media (max-width: 680px){
-      .rowGrid{grid-template-columns: 1.8fr 1fr 1fr auto;}
       header{top:0; border-radius:0; border-left:0; border-right:0;}
       .wrap{padding:12px;}
       .card{padding:14px;}
+      .selectionGrid{grid-template-columns: 1fr;}
     }
-    #timerBottomBar{
-    position: sticky;
-    bottom: 12px;
-    margin-top: 14px;
-
-    display:flex;
-    justify-content: space-between;
-    align-items:center;
-    gap: 12px;
-
-    padding: 12px;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: rgba(18,20,27,.92);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(8px);
-    z-index: 20;
-  }
-
-  #timerMini{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    background: rgba(15,17,23,.55);
-  }
-
-  #timerBottomText{
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: .2px;
-  }
-  #editorTopBar{
-    position: sticky;
-    top: 12px;
-    z-index: 20;
-
-    background: rgba(18,20,27,.92);
-    border:1px solid var(--border);
-    border-radius:14px;
-
-    padding:10px;
-    margin-bottom:12px;
-
-    backdrop-filter: blur(6px);
-  }
   </style>
 </head>
 <body>
@@ -176,28 +158,248 @@
     <header>
       <div class="title">
         <h1>Workout Tracker</h1>
-        <div class="sub">Web App • speichert lokal im Browser (localStorage)</div>
-      </div>
-      <div class="toolbar">
-        <div id="overviewControls">
-
-        <button class="btn ghost" id="btnExport">Export</button>
-        <button class="btn ghost" id="btnImport">Import</button>
-        <button class="btn danger" id="btnReset">Reset</button>
-
-        </div>
+        <div class="sub">Progressives Training mit intelligenten Gewichtsvorschlägen</div>
       </div>
     </header>
     
-    <!-- SCREEN 1: Workout Liste -->
-    <section class="grid" id="screenList">
+    <!-- SCREEN 1: Workout Selection -->
+    <section id="screenSelection" class="grid">
       <div class="card">
-        <div class="row">
-          <div>
-            <div style="font-weight:800; font-size:16px;">Workouts</div>
-            <div class="muted" style="font-size:12px;">Tippe ein Workout an zum Bearbeiten</div>
+        <div>
+          <div style="font-weight:800; font-size:16px;">Trainingsplan wählen</div>
+          <div class="muted" style="font-size:12px;">Wähle einen Bereich aus um zu starten</div>
+        </div>
+        <div class="selectionGrid">
+          <div class="workoutCard" data-type="Push">
+            <div class="name">💪 Push</div>
+            <div class="desc">Brust, Schultern, Trizeps</div>
           </div>
-          <button class="btn primary" id="btnNewWorkout">+ New Workout</button>
+          <div class="workoutCard" data-type="Pull">
+            <div class="name">🔙 Pull</div>
+            <div class="desc">Rücken, Bizeps</div>
+          </div>
+          <div class="workoutCard" data-type="Beine">
+            <div class="name">🦵 Beine</div>
+            <div class="desc">Quads, Hamstrings, Waden</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: Workout Session -->
+    <section id="screenSession" class="grid hidden">
+      <div class="card">
+        <div class="sessionHeader">
+          <div>
+            <div style="font-weight:800; font-size:16px;" id="sessionTitle">Push</div>
+            <div class="muted" style="font-size:12px;">Gib das Gewicht per Satz ein</div>
+          </div>
+          <button class="btn ghost backBtn" id="btnBack">← Zurück</button>
+        </div>
+      </div>
+
+      <div id="exercisesContainer"></div>
+
+      <div class="card">
+        <button class="btn primary" style="width:100%; padding:14px;" id="btnSaveSession">✓ Training speichern</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const TRAINING_PLANS = {
+      Push: [
+        { name: 'Bankdrücken', sets: 5 },
+        { name: 'Butterfly', sets: 3 },
+        { name: 'Seitheben', sets: 4 },
+        { name: 'Trizeps Pushdowns', sets: 4 },
+        { name: 'Katana Extensions', sets: 2 },
+        { name: 'Bauch', sets: 4 }
+      ],
+      Pull: [
+        { name: 'Lattzug', sets: 5 },
+        { name: 'breites Rudern', sets: 3 },
+        { name: 'Back Extensions', sets: 3 },
+        { name: 'enges Rudern', sets: 3 },
+        { name: 'Reverse Butterfly', sets: 3 },
+        { name: 'Biceps', sets: 4 }
+      ],
+      Beine: [
+        { name: 'Squats', sets: 4 },
+        { name: 'Beinpresse', sets: 3 },
+        { name: 'Leg Extensions', sets: 3 },
+        { name: 'Leg Curls', sets: 4 },
+        { name: 'Adduktoren', sets: 3 },
+        { name: 'Waden', sets: 4 }
+      ]
+    };
+
+    let currentWorkoutType = null;
+    let sessionData = {};
+
+    // Load data from localStorage
+    function loadSessions() {
+      const data = localStorage.getItem('workoutSessions');
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveSessions(sessions) {
+      localStorage.setItem('workoutSessions', JSON.stringify(sessions));
+    }
+
+    // Get suggested weight based on history
+    function getSuggestedWeight(exerciseName, setNumber) {
+      const sessions = loadSessions();
+      const exerciseHistory = [];
+
+      sessions.forEach(session => {
+        const exercise = session.exercises.find(e => e.name === exerciseName);
+        if (exercise && exercise.weights && exercise.weights[setNumber - 1]) {
+          exerciseHistory.push(parseFloat(exercise.weights[setNumber - 1]));
+        }
+      });
+
+      if (exerciseHistory.length === 0) return null;
+
+      const lastWeight = exerciseHistory[exerciseHistory.length - 1];
+      const avgWeight = exerciseHistory.reduce((a, b) => a + b) / exerciseHistory.length;
+
+      // Progressive overload: suggest 2.5% increase
+      if (lastWeight >= avgWeight) {
+        return Math.round((lastWeight * 1.025) * 2) / 2; // Round to nearest 0.5
+      }
+      return lastWeight;
+    }
+
+    // Initialize workout selection
+    document.querySelectorAll('.workoutCard').forEach(card => {
+      card.addEventListener('click', () => {
+        currentWorkoutType = card.dataset.type;
+        startWorkoutSession(currentWorkoutType);
+      });
+    });
+
+    // Start a workout session
+    function startWorkoutSession(type) {
+      currentWorkoutType = type;
+      sessionData = {
+        type: type,
+        date: new Date().toISOString(),
+        exercises: []
+      };
+
+      document.getElementById('screenSelection').classList.add('hidden');
+      document.getElementById('screenSession').classList.remove('hidden');
+      document.getElementById('sessionTitle').textContent = type;
+
+      renderExercises();
+    }
+
+    // Render exercises for current session
+    function renderExercises() {
+      const container = document.getElementById('exercisesContainer');
+      container.innerHTML = '';
+
+      const exercises = TRAINING_PLANS[currentWorkoutType];
+
+      exercises.forEach((exercise, exerciseIdx) => {
+        const exerciseCard = document.createElement('div');
+        exerciseCard.className = 'card';
+
+        let htmlContent = `
+          <div class="exerciseItem">
+            <div class="exerciseTitle">
+              <span>${exercise.name}</span>
+              <span class="volumeDisplay" id="vol-${exerciseIdx}">0 kg</span>
+            </div>
+            <div class="exerciseInfo">${exercise.sets} Sätze</div>
+            <div class="exerciseInputGroup">
+        `;
+
+        for (let set = 1; set <= exercise.sets; set++) {
+          const suggestedWeight = getSuggestedWeight(exercise.name, set);
+          htmlContent += `<input type="number" class="input" style="width:60px; padding:8px;" 
+            data-exercise="${exerciseIdx}" data-set="${set}" placeholder="S${set}" />`;
+        }
+
+        htmlContent += `</div>`;
+
+        const suggestedWeight = getSuggestedWeight(exercise.name, 1);
+        if (suggestedWeight !== null) {
+          htmlContent += `<div class="suggestedWeight">💡 Empfohlen für 1. Satz: ${suggestedWeight} kg (progressives Training)</div>`;
+        }
+
+        htmlContent += `</div>`;
+
+        exerciseCard.innerHTML = htmlContent;
+        container.appendChild(exerciseCard);
+
+        // Add event listeners for weight inputs
+        exerciseCard.querySelectorAll('input').forEach(input => {
+          input.addEventListener('input', updateVolume);
+        });
+      });
+    }
+
+    // Update total volume display
+    function updateVolume(e) {
+      const exerciseIdx = e.target.dataset.exercise;
+      const inputs = document.querySelectorAll(`input[data-exercise="${exerciseIdx}"]`);
+      let totalVolume = 0;
+
+      inputs.forEach(input => {
+        if (input.value) {
+          totalVolume += parseFloat(input.value);
+        }
+      });
+
+      document.getElementById(`vol-${exerciseIdx}`).textContent = totalVolume + ' kg';
+    }
+
+    // Save workout session
+    document.getElementById('btnSaveSession').addEventListener('click', () => {
+      const exercises = TRAINING_PLANS[currentWorkoutType];
+      const sessionExercises = [];
+
+      exercises.forEach((exercise, exerciseIdx) => {
+        const inputs = document.querySelectorAll(`input[data-exercise="${exerciseIdx}"]`);
+        const weights = [];
+
+        inputs.forEach(input => {
+          weights.push(input.value || 0);
+        });
+
+        sessionExercises.push({
+          name: exercise.name,
+          weights: weights
+        });
+      });
+
+      sessionData.exercises = sessionExercises;
+
+      const sessions = loadSessions();
+      sessions.push(sessionData);
+      saveSessions(sessions);
+
+      alert('✓ Training erfolgreich gespeichert!');
+      resetUI();
+    });
+
+    // Back button
+    document.getElementById('btnBack').addEventListener('click', () => {
+      resetUI();
+    });
+
+    function resetUI() {
+      currentWorkoutType = null;
+      sessionData = {};
+      document.getElementById('screenSession').classList.add('hidden');
+      document.getElementById('screenSelection').classList.remove('hidden');
+      document.getElementById('exercisesContainer').innerHTML = '';
+    }
+  </script>
+</body>
+</html>
         </div>
 
         <div class="divider"></div>
