@@ -145,7 +145,44 @@
       padding: 10px 12px;
     }
 
-    @media (max-width: 680px){
+    /* History Styles */
+    .historyItem{
+      background: rgba(15,17,23,.55);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .historyHeader{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .historyDate{
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .historyType{
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(94,234,212,.1);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(94,234,212,.3);
+    }
+    .historyExercises{
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .deleteHistoryBtn{
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+@media (max-width: 680px){
       header{top:0; border-radius:0; border-left:0; border-right:0;}
       .wrap{padding:12px;}
       .card{padding:14px;}
@@ -165,9 +202,12 @@
     <!-- SCREEN 1: Workout Selection -->
     <section id="screenSelection" class="grid">
       <div class="card">
-        <div>
-          <div style="font-weight:800; font-size:16px;">Trainingsplan wählen</div>
-          <div class="muted" style="font-size:12px;">Wähle einen Bereich aus um zu starten</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <div style="font-weight:800; font-size:16px;">Trainingsplan wählen</div>
+            <div class="muted" style="font-size:12px;">Wähle einen Bereich aus um zu starten</div>
+          </div>
+          <button class="btn ghost" id="btnShowHistory">📊 Historie</button>
         </div>
         <div class="selectionGrid">
           <div class="workoutCard" data-type="Push">
@@ -203,6 +243,21 @@
       <div class="card">
         <button class="btn primary" style="width:100%; padding:14px;" id="btnSaveSession">✓ Training speichern</button>
       </div>
+    </section>
+
+    <!-- SCREEN 3: History -->
+    <section id="screenHistory" class="grid hidden">
+      <div class="card">
+        <div class="sessionHeader">
+          <div>
+            <div style="font-weight:800; font-size:16px;">Trainingshistorie</div>
+            <div class="muted" style="font-size:12px;">Deine bisherigen Trainings</div>
+          </div>
+          <button class="btn ghost backBtn" id="btnBackHistory">← Zurück</button>
+        </div>
+      </div>
+
+      <div id="historyContainer"></div>
     </section>
   </div>
 
@@ -390,10 +445,98 @@
       resetUI();
     });
 
+    // History button
+    document.getElementById('btnShowHistory').addEventListener('click', () => {
+      showHistory();
+    });
+
+    // Back from history
+    document.getElementById('btnBackHistory').addEventListener('click', () => {
+      resetUI();
+    });
+
+    function showHistory() {
+      currentWorkoutType = null;
+      sessionData = {};
+      document.getElementById('screenSelection').classList.add('hidden');
+      document.getElementById('screenSession').classList.add('hidden');
+      document.getElementById('screenHistory').classList.remove('hidden');
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyContainer');
+      const sessions = loadSessions();
+
+      if (sessions.length === 0) {
+        container.innerHTML = '<div class="card"><div class="muted" style="text-align: center; padding: 40px;">Noch keine Trainings gespeichert</div></div>';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      // Sort by date descending (newest first)
+      sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      sessions.forEach((session, idx) => {
+        const date = new Date(session.date);
+        const dateStr = date.toLocaleDateString('de-DE', { 
+          weekday: 'short', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        let exercisesHtml = '';
+        let totalVolume = 0;
+        session.exercises.forEach(ex => {
+          const weights = ex.weights.filter(w => w && w !== '0').map(w => w + ' kg').join(' • ');
+          const volume = ex.weights.reduce((sum, w) => sum + (parseFloat(w) || 0), 0);
+          totalVolume += volume;
+          exercisesHtml += `<div>${ex.name}: ${weights}</div>`;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="historyItem">
+            <div class="historyHeader">
+              <div>
+                <div class="historyDate">${dateStr}</div>
+                <div class="historyType">${session.type}</div>
+              </div>
+              <button class="btn danger deleteHistoryBtn" data-index="${sessions.indexOf(session)}">🗑</button>
+            </div>
+            <div class="historyExercises">
+              ${exercisesHtml}
+            </div>
+            <div class="suggestedWeight" style="margin-top: 10px;">📈 Gesamtvolumen: ${totalVolume} kg</div>
+          </div>
+        `;
+        container.appendChild(card);
+
+        card.querySelector('.deleteHistoryBtn').addEventListener('click', (e) => {
+          if (confirm('Dieses Training wirklich löschen?')) {
+            deleteSession(parseInt(e.target.dataset.index));
+          }
+        });
+      });
+    }
+
+    function deleteSession(index) {
+      const sessions = loadSessions();
+      sessions.splice(index, 1);
+      saveSessions(sessions);
+      renderHistory();
+    }
+
     function resetUI() {
       currentWorkoutType = null;
       sessionData = {};
       document.getElementById('screenSession').classList.add('hidden');
+      document.getElementById('screenHistory').classList.add('hidden');
       document.getElementById('screenSelection').classList.remove('hidden');
       document.getElementById('exercisesContainer').innerHTML = '';
     }
