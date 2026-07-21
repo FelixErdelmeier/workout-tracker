@@ -20,19 +20,28 @@
       --radius:16px;
       --input:#0f1117;
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+    html{ -webkit-text-size-adjust:100%; }
     body{
       margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      -webkit-font-smoothing:antialiased;
       background: radial-gradient(1200px 600px at 20% 0%, rgba(94,234,212,.08), transparent 60%),
                   radial-gradient(900px 500px at 90% 20%, rgba(99,102,241,.10), transparent 55%),
                   var(--bg);
       color:var(--text);
+      padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+      overscroll-behavior-y: none;
     }
-    .wrap{max-width:980px; margin:0 auto; padding:20px;}
+    .wrap{
+      max-width:980px; margin:0 auto; padding:20px;
+      padding-top:max(20px, env(safe-area-inset-top));
+      padding-bottom:max(28px, env(safe-area-inset-bottom));
+    }
     header{
       display:flex; gap:12px; align-items:center; justify-content:space-between;
       padding:14px 16px; background:rgba(18,20,27,.75); border:1px solid var(--border);
-      border-radius:var(--radius); box-shadow:var(--shadow); position:sticky; top:12px; z-index:10;
+      border-radius:var(--radius); box-shadow:var(--shadow); position:sticky;
+      top:max(12px, env(safe-area-inset-top)); z-index:10;
       backdrop-filter: blur(8px);
     }
     header .title{display:flex; flex-direction:column; gap:2px;}
@@ -40,13 +49,15 @@
     header .sub{color:var(--muted); font-size:12px;}
     .btn{
       appearance:none; border:1px solid var(--border); background:transparent; color:var(--text);
-      padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600;
+      padding:10px 14px; min-height:44px; border-radius:12px; cursor:pointer; font-weight:600;
       transition: transform .05s ease, border-color .15s ease, background .15s ease;
       display:inline-flex; gap:8px; align-items:center; justify-content:center;
-      user-select:none;
+      user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
     }
-    .btn:hover{border-color: rgba(94,234,212,.45); background: rgba(94,234,212,.06);}
-    .btn:active{transform: translateY(1px);}
+    @media (hover:hover) and (pointer:fine){
+      .btn:hover{border-color: rgba(94,234,212,.45); background: rgba(94,234,212,.06);}
+    }
+    .btn:active{transform: scale(.97); border-color: rgba(94,234,212,.45); background: rgba(94,234,212,.08);}
     .btn.primary{border-color: rgba(94,234,212,.5); background: rgba(94,234,212,.10);}
     .btn.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.08);}
     .btn.ghost{background:transparent;}
@@ -58,6 +69,8 @@
       backdrop-filter: blur(8px);
     }
     .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .selectionHeader{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px;}
+    .cardTitle{font-weight:800; font-size:16px;}
     .muted{color:var(--muted);}
     .divider{height:1px; background: var(--border); margin:14px 0;}
     .list{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
@@ -65,6 +78,7 @@
     .input{
       width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--border);
       background: rgba(15,17,23,.7); color: var(--text); outline:none;
+      font-size:16px; font-family:inherit;
     }
     .input:focus{border-color: rgba(94,234,212,.55); box-shadow: 0 0 0 3px rgba(94,234,212,.12);}
     .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -82,13 +96,21 @@
       border-radius: 16px;
       padding: 20px;
       cursor: pointer;
-      transition: all .2s ease;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
       text-align: center;
+      user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
     }
-    .workoutCard:hover{
+    @media (hover:hover) and (pointer:fine){
+      .workoutCard:hover{
+        border-color: rgba(94,234,212,.5);
+        background: rgba(94,234,212,.08);
+        transform: translateY(-2px);
+      }
+    }
+    .workoutCard:active{
       border-color: rgba(94,234,212,.5);
       background: rgba(94,234,212,.08);
-      transform: translateY(-2px);
+      transform: scale(.98);
     }
     .workoutCard .name{
       font-size: 18px;
@@ -120,10 +142,27 @@
       color: var(--muted);
       margin-bottom: 10px;
     }
-    .exerciseInputGroup{
-      display: flex;
+    .setGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
       gap: 10px;
+    }
+    .setSlot{
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      gap: 5px;
+    }
+    .setLabel{
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .setInput{
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 4px;
+      text-align: center;
     }
     .volumeDisplay{
       font-size: 12px;
@@ -191,10 +230,17 @@
     }
 
 @media (max-width: 680px){
-      header{top:0; border-radius:0; border-left:0; border-right:0;}
-      .wrap{padding:12px;}
+      header{top:env(safe-area-inset-top); border-radius:0; border-left:0; border-right:0;}
+      .wrap{
+        padding:12px;
+        padding-top:max(12px, env(safe-area-inset-top));
+        padding-bottom:max(20px, env(safe-area-inset-bottom));
+      }
       .card{padding:14px;}
       .selectionGrid{grid-template-columns: 1fr;}
+      .selectionHeader{flex-direction:column; align-items:stretch;}
+      .selectionHeader .toolbar{width:100%;}
+      .selectionHeader .toolbar .btn{flex:1; padding:10px 6px; font-size:12.5px; gap:4px;}
     }
   </style>
 </head>
@@ -210,14 +256,14 @@
     <!-- SCREEN 1: Workout Selection -->
     <section id="screenSelection" class="grid">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="selectionHeader">
           <div>
-            <div style="font-weight:800; font-size:16px;">Trainingsplan wählen</div>
+            <div class="cardTitle">Trainingsplan wählen</div>
             <div class="muted" style="font-size:12px;">Wähle einen Bereich aus um zu starten</div>
           </div>
           <div class="toolbar">
             <button class="btn ghost" id="btnExport" title="Historie als JSON-Datei sichern">⬇️ Backup</button>
-            <button class="btn ghost" id="btnImport" title="Historie aus JSON-Datei wiederherstellen">⬆️ Wiederherstellen</button>
+            <button class="btn ghost" id="btnImport" title="Historie aus JSON-Datei wiederherstellen">⬆️ Import</button>
             <button class="btn ghost" id="btnShowHistory">📊 Historie</button>
           </div>
         </div>
@@ -243,7 +289,7 @@
       <div class="card">
         <div class="sessionHeader">
           <div>
-            <div style="font-weight:800; font-size:16px;" id="sessionTitle">Push</div>
+            <div class="cardTitle" id="sessionTitle">Push</div>
             <div class="muted" style="font-size:12px;">Gib das Gewicht per Satz ein</div>
           </div>
           <button class="btn ghost backBtn" id="btnBack">← Zurück</button>
@@ -262,7 +308,7 @@
       <div class="card">
         <div class="sessionHeader">
           <div>
-            <div style="font-weight:800; font-size:16px;">Trainingshistorie</div>
+            <div class="cardTitle">Trainingshistorie</div>
             <div class="muted" style="font-size:12px;">Deine bisherigen Trainings</div>
           </div>
           <button class="btn ghost backBtn" id="btnBackHistory">← Zurück</button>
@@ -278,7 +324,7 @@
   <script>
     const TRAINING_PLANS = {
       Push: [
-        { name: 'Bankdrücken', sets: 5 },
+        { name: 'Bankdrücken', sets: 4 },
         { name: 'Butterfly', sets: 3 },
         { name: 'Seitheben', sets: 4 },
         { name: 'Trizeps Pushdowns', sets: 4 },
@@ -286,7 +332,7 @@
         { name: 'Bauch', sets: 4 }
       ],
       Pull: [
-        { name: 'Lattzug', sets: 5 },
+        { name: 'Lattzug', sets: 4 },
         { name: 'breites Rudern', sets: 3 },
         { name: 'Back Extensions', sets: 3 },
         { name: 'enges Rudern', sets: 3 },
@@ -416,23 +462,22 @@
               <span class="volumeDisplay" id="vol-${exerciseIdx}">0 kg</span>
             </div>
             <div class="exerciseInfo">${exercise.sets} Sätze</div>
-            <div class="exerciseInputGroup">
+            <div class="setGrid">
         `;
 
         for (let set = 1; set <= exercise.sets; set++) {
           const suggestedWeight = getSuggestedWeight(exercise.name, set);
-          htmlContent += `<input type="number" class="input" style="width:60px; padding:8px;" 
-            data-exercise="${exerciseIdx}" data-set="${set}" placeholder="S${set}" />`;
+          const placeholder = suggestedWeight !== null ? suggestedWeight : 'kg';
+          htmlContent += `
+            <div class="setSlot">
+              <label class="setLabel">Satz ${set}</label>
+              <input type="number" inputmode="decimal" class="input setInput"
+                data-exercise="${exerciseIdx}" data-set="${set}" placeholder="${placeholder}" />
+            </div>
+          `;
         }
 
-        htmlContent += `</div>`;
-
-        const suggestedWeight = getSuggestedWeight(exercise.name, 1);
-        if (suggestedWeight !== null) {
-          htmlContent += `<div class="suggestedWeight">💡 Empfohlen für 1. Satz: ${suggestedWeight} kg (progressives Training)</div>`;
-        }
-
-        htmlContent += `</div>`;
+        htmlContent += `</div></div>`;
 
         exerciseCard.innerHTML = htmlContent;
         container.appendChild(exerciseCard);
