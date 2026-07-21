@@ -395,26 +395,47 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, sessions }));
     }
 
+    // Wie viele der jüngsten Trainings als Trend-Basislinie zählen, bevor eine
+    // Steigerung vorgeschlagen wird. Kurzes Fenster statt All-Time-Schnitt,
+    // damit ein einzelnes schwaches oder sehr altes Training nicht dauerhaft
+    // nachwirkt.
+    const SUGGESTION_WINDOW = 4;
+    const OVERLOAD_FACTOR = 1.025; // +2.5%
+    const MIN_STEP_KG = 0.5;
+
     // Get suggested weight based on history
     function getSuggestedWeight(exerciseName, setNumber) {
-      const sessions = loadSessions();
-      const exerciseHistory = [];
+      // Chronologisch sortieren: nach einem Import können Sessions in
+      // beliebiger Reihenfolge im Storage liegen.
+      const sessions = [...loadSessions()].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const history = [];
 
       sessions.forEach(session => {
         const exercise = session.exercises.find(e => e.name === exerciseName);
-        if (exercise && exercise.weights && exercise.weights[setNumber - 1]) {
-          exerciseHistory.push(parseFloat(exercise.weights[setNumber - 1]));
-        }
+        const weight = parseFloat(exercise?.weights?.[setNumber - 1]);
+        // 0/leer heißt "kein Satz absolviert" und zählt nicht als Datenpunkt.
+        if (Number.isFinite(weight) && weight > 0) history.push(weight);
       });
 
-      if (exerciseHistory.length === 0) return null;
+      if (history.length === 0) return null;
 
-      const lastWeight = exerciseHistory[exerciseHistory.length - 1];
-      const avgWeight = exerciseHistory.reduce((a, b) => a + b) / exerciseHistory.length;
+      const lastWeight = history[history.length - 1];
+      // Trend aus den Trainings VOR dem letzten, nicht inklusive diesem –
+      // sonst dämpft der letzte Wert seinen eigenen Vergleichswert.
+      const priorWindow = history.slice(-(SUGGESTION_WINDOW + 1), -1);
+      const baseline = priorWindow.length > 0
+        ? priorWindow.reduce((a, b) => a + b, 0) / priorWindow.length
+        : lastWeight; // erster Datenpunkt: direkt Steigerung vorschlagen
 
-      // Progressive overload: suggest 2.5% increase
-      if (lastWeight >= avgWeight) {
-        return Math.round((lastWeight * 1.025) * 2) / 2; // Round to nearest 0.5
+      // Letztes Training hielt mit dem Trend mit oder übertraf ihn -> steigern.
+      // Sonst (Ausreißer nach unten/Formtief) erstmal beim letzten Gewicht bleiben,
+      // statt sofort wieder draufzusatteln.
+      if (lastWeight >= baseline) {
+        // + winziges Epsilon gegen Fließkomma-Rundungsfehler (z.B. 92.25 -> 92 statt 92.5)
+        const increased = Math.round(lastWeight * OVERLOAD_FACTOR * 2 + 1e-9) / 2; // auf 0.5kg runden
+        // Bei leichten Gewichten kann das Runden die Steigerung wegrunden –
+        // daher mindestens einen sichtbaren Schritt garantieren.
+        return Math.max(increased, lastWeight + MIN_STEP_KG);
       }
       return lastWeight;
     }
