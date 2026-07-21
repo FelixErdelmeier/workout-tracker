@@ -2,8 +2,16 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Workout Tracker</title>
+  <!-- iOS "Zum Home-Bildschirm" -> Standalone-App statt Safari-Tab -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Workout" />
+  <meta name="theme-color" content="#0b0c10" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/icon-192.png" />
   <style>
     :root{
       --bg:#0b0c10; --card:#12141b; --muted:#9aa4b2; --text:#e8edf3;
@@ -207,7 +215,11 @@
             <div style="font-weight:800; font-size:16px;">Trainingsplan wählen</div>
             <div class="muted" style="font-size:12px;">Wähle einen Bereich aus um zu starten</div>
           </div>
-          <button class="btn ghost" id="btnShowHistory">📊 Historie</button>
+          <div class="toolbar">
+            <button class="btn ghost" id="btnExport" title="Historie als JSON-Datei sichern">⬇️ Backup</button>
+            <button class="btn ghost" id="btnImport" title="Historie aus JSON-Datei wiederherstellen">⬆️ Wiederherstellen</button>
+            <button class="btn ghost" id="btnShowHistory">📊 Historie</button>
+          </div>
         </div>
         <div class="selectionGrid">
           <div class="workoutCard" data-type="Push">
@@ -261,6 +273,8 @@
     </section>
   </div>
 
+  <input type="file" id="fileInput" accept="application/json" class="hidden" />
+
   <script>
     const TRAINING_PLANS = {
       Push: [
@@ -292,14 +306,47 @@
     let currentWorkoutType = null;
     let sessionData = {};
 
+    // Damit Struktur-Änderungen an gespeicherten Daten künftig nicht die
+    // Historie zerstören: Daten werden versioniert abgelegt. Beim Laden wird
+    // ggf. von einer älteren Version hochmigriert, statt Altbestand zu verwerfen.
+    const STORAGE_KEY = 'workoutSessions';
+    const SCHEMA_VERSION = 2;
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    // Hebt gespeicherte Daten schrittweise auf SCHEMA_VERSION an.
+    function migrate(stored) {
+      // Version 1 (unversioniert): rohes Array von Sessions ohne id.
+      if (Array.isArray(stored)) {
+        stored = { version: 1, sessions: stored };
+      }
+      if (!stored || !Array.isArray(stored.sessions)) {
+        stored = { version: SCHEMA_VERSION, sessions: [] };
+      }
+      if (stored.version < 2) {
+        stored.sessions = stored.sessions.map(s => ({ id: s.id || uid(), ...s }));
+        stored.version = 2;
+      }
+      return stored;
+    }
+
     // Load data from localStorage
     function loadSessions() {
-      const data = localStorage.getItem('workoutSessions');
-      return data ? JSON.parse(data) : [];
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return [];
+      }
+      return migrate(parsed).sessions;
     }
 
     function saveSessions(sessions) {
-      localStorage.setItem('workoutSessions', JSON.stringify(sessions));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, sessions }));
     }
 
     // Get suggested weight based on history
@@ -338,6 +385,7 @@
     function startWorkoutSession(type) {
       currentWorkoutType = type;
       sessionData = {
+        id: uid(),
         type: type,
         date: new Date().toISOString(),
         exercises: []
@@ -507,7 +555,7 @@
                 <div class="historyDate">${dateStr}</div>
                 <div class="historyType">${session.type}</div>
               </div>
-              <button class="btn danger deleteHistoryBtn" data-index="${sessions.indexOf(session)}">🗑</button>
+              <button class="btn danger deleteHistoryBtn" data-id="${session.id}">🗑</button>
             </div>
             <div class="historyExercises">
               ${exercisesHtml}
@@ -519,15 +567,14 @@
 
         card.querySelector('.deleteHistoryBtn').addEventListener('click', (e) => {
           if (confirm('Dieses Training wirklich löschen?')) {
-            deleteSession(parseInt(e.target.dataset.index));
+            deleteSession(e.target.dataset.id);
           }
         });
       });
     }
 
-    function deleteSession(index) {
-      const sessions = loadSessions();
-      sessions.splice(index, 1);
+    function deleteSession(id) {
+      const sessions = loadSessions().filter(s => s.id !== id);
       saveSessions(sessions);
       renderHistory();
     }
@@ -540,561 +587,61 @@
       document.getElementById('screenSelection').classList.remove('hidden');
       document.getElementById('exercisesContainer').innerHTML = '';
     }
-  </script>
-</body>
-</html>
-        </div>
 
-        <div class="divider"></div>
-
-        <div class="list" id="workoutList"></div>
-      </div>
-    </section>
-
-    <!-- SCREEN 2: Workout Editor -->
-    <section class="grid hidden" id="screenEditor">
-      <div class="card">
-        <div id="editorTopBar" class="row">
-          <div style="min-width:220px; flex:1;">
-            <div class="muted" style="font-size:12px;">Workout Name</div>
-            <input class="input" id="workoutName" placeholder="z.B. Push Day" />
-          </div>
-          <div class="toolbar">
-            <button class="btn" id="btnBack">← Back</button>
-            <button class="btn primary" id="btnAddExercise">+ Add Exercise</button>
-            <button class="btn danger" id="btnDeleteWorkout">Delete Workout</button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="muted" style="font-size:12px; margin-bottom:8px;">Exercise Name • Reps • Weight</div>
-        <div id="exerciseContainer">
-
-
-        </div>
-
-        <div class="hint">
-          Reps sind ganze Zahlen, Weight kann Dezimalstellen haben (z.B. 82.5).
-        </div>
-      </div>
-
-      <div id="timerBottomBar">
-        <div id="timerMini">
-          <span id="timerBottomText">3:00</span>
-        </div>
-
-        <div style="display:flex; gap:10px;">
-          <button class="btn primary" id="btnStartTimer">Start</button>
-          <button class="btn" id="btnPauseTimer">Stop</button>
-          <button class="btn danger" id="btnResetTimer">Reset</button>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Modal: New Workout -->
-  <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modal">
-      <h2>Neues Workout</h2>
-      <div class="muted" style="font-size:12px; margin-bottom:10px;">Gib einen Namen ein (du kannst ihn später ändern).</div>
-      <input class="input" id="newWorkoutName" placeholder="z.B. Pull Day" />
-      <div class="actions">
-        <button class="btn" id="btnModalCancel">Cancel</button>
-        <button class="btn primary" id="btnModalCreate">Create</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hidden file input for Import -->
-  <input type="file" id="fileInput" accept="application/json" class="hidden" />
-
-  <script>
-    /**********************
-     * Data Model + Storage
-     **********************/
-    const STORAGE_KEY = "workout-tracker.v1";
-
-    /** @typedef {{id:string, name:string, reps:number|null, weight:number|null}} Exercise */
-    /** @typedef {{id:string, name:string, createdAt:number, exercises:Exercise[]}} Workout */
-    /** @typedef {{workouts:Workout[], selectedId:string|null}} AppState */
-
-    /** @type {AppState} */
-    let state = loadState();
-
-    function uid(){
-      // good enough for local IDs
-      return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
-    }
-
-    function loadState(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(!raw) return { workouts: [], selectedId: null };
-        const parsed = JSON.parse(raw);
-        if(!parsed || !Array.isArray(parsed.workouts)) return { workouts: [], selectedId: null };
-        return { workouts: parsed.workouts, selectedId: parsed.selectedId ?? null };
-      }catch{
-        return { workouts: [], selectedId: null };
-      }
-    }
-
-    function saveState(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    function getSelectedWorkout(){
-      if(!state.selectedId) return null;
-      return state.workouts.find(w => w.id === state.selectedId) ?? null;
-    }
-
-    /**********************
-     * UI Elements
-     **********************/
-    const screenList = document.getElementById("screenList");
-    const screenEditor = document.getElementById("screenEditor");
-
-    const workoutListEl = document.getElementById("workoutList");
-    const btnNewWorkout = document.getElementById("btnNewWorkout");
-
-    const btnBack = document.getElementById("btnBack");
-    const workoutNameInput = document.getElementById("workoutName");
-    const exerciseContainer = document.getElementById("exerciseContainer");
-    const btnAddExercise = document.getElementById("btnAddExercise");
-    const btnDeleteWorkout = document.getElementById("btnDeleteWorkout");
-
-    const modalOverlay = document.getElementById("modalOverlay");
-    const newWorkoutNameInput = document.getElementById("newWorkoutName");
-    const btnModalCancel = document.getElementById("btnModalCancel");
-    const btnModalCreate = document.getElementById("btnModalCreate");
-
-    const btnReset = document.getElementById("btnReset");
-    const btnExport = document.getElementById("btnExport");
-    const btnImport = document.getElementById("btnImport");
-    const fileInput = document.getElementById("fileInput");
-
-    // TIMER ELEMENTE
-    const btnStartTimer = document.getElementById("btnStartTimer");
-const btnPauseTimer = document.getElementById("btnPauseTimer");
-const btnResetTimer = document.getElementById("btnResetTimer");
-
-const timerBottomText = document.getElementById("timerBottomText");
-
-let duration = 180;
-let endTime = null;
-let timerInterval = null;
-
-function updateTimer(){
-
-  if(!endTime) return;
-
-  let remaining = Math.round((endTime - Date.now()) / 1000);
-
-  if(remaining <= 0){
-
-    remaining = 0;
-
-    clearInterval(timerInterval);
-
-    if(navigator.vibrate){
-      navigator.vibrate([200,100,200]);
-    }
-
-    // automatisch resetten
-    endTime = null;
-
-  }
-
-  let minutes = Math.floor(remaining / 60);
-  let seconds = remaining % 60;
-
-  let timeString =
-    minutes + ":" + String(seconds).padStart(2,"0");
-
-  if(timerBottomText){
-    timerBottomText.textContent = timeString;
-  }
-
-}
-
-btnStartTimer.addEventListener("click", () => {
-
-  endTime = Date.now() + duration * 1000;
-
-  clearInterval(timerInterval);
-
-  timerInterval = setInterval(updateTimer, 500);
-
-});
-
-btnPauseTimer.addEventListener("click", () => {
-
-  clearInterval(timerInterval);
-
-});
-
-btnResetTimer.addEventListener("click", () => {
-
-  clearInterval(timerInterval);
-
-  endTime = null;
-
-  if(timerBottomText){
-    timerBottomText.textContent = "3:00";
-  }
-
-});
-
-updateTimer();
-    /**********************
-     * Rendering
-     **********************/
-    function showList(){
-      screenList.classList.remove("hidden");
-      screenEditor.classList.add("hidden");
-      document.getElementById("overviewControls").style.display = "flex";
-      state.selectedId = null;
-      saveState();
-      renderList();
-    }
-
-    function showEditor(workoutId){
-      state.selectedId = workoutId;
-      saveState();
-      screenList.classList.add("hidden");
-      screenEditor.classList.remove("hidden");
-      document.getElementById("overviewControls").style.display = "none";
-      renderEditor();
-    }
-
-    function renderList(){
-      // empty state
-      workoutListEl.innerHTML = "";
-      if(state.workouts.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "muted";
-        empty.style.padding = "10px 2px";
-        empty.textContent = "Noch keine Workouts. Klicke auf „+ New Workout“.";
-        workoutListEl.appendChild(empty);
-        return;
-      }
-
-      // sort by newest
-      const workoutsSorted = [...state.workouts].sort((a,b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-
-      for(const w of workoutsSorted){
-        const item = document.createElement("div");
-        item.className = "workoutItem";
-        item.tabIndex = 0;
-
-        const left = document.createElement("div");
-        left.style.display = "flex";
-        left.style.flexDirection = "column";
-        left.style.gap = "3px";
-
-        const name = document.createElement("div");
-        name.className = "name";
-        name.textContent = w.name?.trim() ? w.name : "Untitled Workout";
-
-        const meta = document.createElement("div");
-        meta.className = "muted";
-        meta.style.fontSize = "12px";
-        const n = (w.exercises?.length ?? 0);
-        meta.textContent = `${n} ${n===1 ? "Exercise" : "Exercises"}`;
-
-        left.appendChild(name);
-        left.appendChild(meta);
-
-        const right = document.createElement("div");
-        right.className = "pill";
-        const dt = new Date(w.createdAt || Date.now());
-        right.textContent = dt.toLocaleDateString("de-DE");
-
-        item.appendChild(left);
-        item.appendChild(right);
-
-        item.addEventListener("click", () => showEditor(w.id));
-        item.addEventListener("keydown", (e) => {
-          if(e.key === "Enter" || e.key === " "){
-            e.preventDefault();
-            showEditor(w.id);
-          }
-        });
-
-        workoutListEl.appendChild(item);
-      }
-    }
-
-    function renderEditor(){
-      const w = getSelectedWorkout();
-      if(!w){
-        showList();
-        return;
-      }
-      workoutNameInput.value = w.name ?? "";
-      exerciseContainer.innerHTML = "";
-
-      if(!Array.isArray(w.exercises)) w.exercises = [];
-
-      if(w.exercises.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "muted";
-        empty.style.padding = "10px 2px";
-        empty.textContent = "Noch keine Übungen. Klicke auf „+ Add Exercise“.";
-        exerciseContainer.appendChild(empty);
-        return;
-      }
-
-      // header row (simple, mobile-friendly)
-      const header = document.createElement("div");
-      header.style.display = "grid";
-      header.style.gridTemplateColumns = "2.2fr 1fr 1fr auto";
-      header.style.gap = "10px";
-      header.style.padding = "0 10px 6px 10px";
-      header.style.color = "var(--muted)";
-      header.style.fontSize = "12px";
-      header.style.fontWeight = "700";
-      header.innerHTML = "<div>Exercise</div><div>Reps</div><div>Weight</div><div></div>";
-      exerciseContainer.appendChild(header);
-
-      for(const ex of w.exercises){
-        const row = document.createElement("div");
-        row.className = "rowGrid";
-
-        const nameInput = document.createElement("input");
-        nameInput.className = "input";
-        nameInput.placeholder = "z.B. Bench Press";
-        nameInput.maxLength = 120;
-        nameInput.value = ex.name ?? "";
-        nameInput.addEventListener("input", () => {
-          ex.name = nameInput.value;
-          saveState();
-          // list view meta may depend on exercise length -> keep it accurate
-          renderList();
-        });
-
-        const repsInput = document.createElement("input");
-        repsInput.className = "input";
-        repsInput.placeholder = "10";
-        repsInput.inputMode = "numeric";
-        repsInput.value = (ex.reps ?? "") === "" ? "" : String(ex.reps);
-        repsInput.addEventListener("input", () => {
-          const v = repsInput.value.trim();
-          if(v === "") ex.reps = null;
-          else{
-            const n = Number(v);
-            ex.reps = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
-          }
-          saveState();
-        });
-
-        const weightInput = document.createElement("input");
-        weightInput.className = "input";
-        weightInput.placeholder = "80";
-        weightInput.inputMode = "decimal";
-        weightInput.value = (ex.weight ?? "") === "" ? "" : String(ex.weight);
-        weightInput.addEventListener("input", () => {
-          const v = weightInput.value.trim().replace(",", ".");
-          if(v === "") ex.weight = null;
-          else{
-            const n = Number(v);
-            ex.weight = Number.isFinite(n) ? Math.max(0, n) : null;
-          }
-          saveState();
-        });
-
-        const delBtn = document.createElement("button");
-        delBtn.className = "miniBtn";
-        delBtn.title = "Übung löschen";
-        delBtn.textContent = "✕";
-        delBtn.addEventListener("click", () => {
-          w.exercises = w.exercises.filter(e => e.id !== ex.id);
-          saveState();
-          renderEditor();
-          renderList();
-        });
-
-        row.appendChild(nameInput);
-        row.appendChild(repsInput);
-        row.appendChild(weightInput);
-        row.appendChild(delBtn);
-
-        exerciseContainer.appendChild(row);
-      }
-    }
-
-    /**********************
-     * Actions
-     **********************/
-    function openModal(){
-      modalOverlay.classList.remove("hidden");
-      modalOverlay.setAttribute("aria-hidden", "false");
-      newWorkoutNameInput.value = "";
-      newWorkoutNameInput.focus();
-    }
-
-    function closeModal(){
-      modalOverlay.classList.add("hidden");
-      modalOverlay.setAttribute("aria-hidden", "true");
-    }
-
-    function createWorkout(name){
-      const workout = {
-        id: uid(),
-        name: (name ?? "").trim() || "Untitled Workout",
-        createdAt: Date.now(),
-        exercises: []
-      };
-      state.workouts.push(workout);
-      saveState();
-      renderList();
-      showEditor(workout.id);
-      // start with one row to match typical flow
-      addExercise();
-      // focus first exercise name
-      setTimeout(() => {
-        const firstInput = exerciseContainer.querySelector("input");
-        if(firstInput) firstInput.focus();
-      }, 0);
-    }
-
-    function addExercise(){
-      const w = getSelectedWorkout();
-      if(!w) return;
-      if(!Array.isArray(w.exercises)) w.exercises = [];
-      w.exercises.push({ id: uid(), name: "", reps: null, weight: null });
-      saveState();
-      renderEditor();
-      renderList();
-    }
-
-    function deleteSelectedWorkout(){
-      const w = getSelectedWorkout();
-      if(!w) return;
-      const ok = confirm(`Workout wirklich löschen?\n\n"${w.name || "Untitled Workout"}"`);
-      if(!ok) return;
-      state.workouts = state.workouts.filter(x => x.id !== w.id);
-      state.selectedId = null;
-      saveState();
-      showList();
-    }
-
-    function resetAll(){
-      const ok = confirm("Wirklich ALLES löschen? (Alle Workouts gehen verloren)");
-      if(!ok) return;
-      state = { workouts: [], selectedId: null };
-      saveState();
-      showList();
-    }
-
-    function exportJson(){
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
+    // Backup: Historie als JSON-Datei herunterladen (z.B. in Dateien/iCloud ablegen)
+    function exportHistory() {
+      const sessions = loadSessions();
+      const blob = new Blob(
+        [JSON.stringify({ version: SCHEMA_VERSION, sessions }, null, 2)],
+        { type: 'application/json' }
+      );
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "workout-tracker-export.json";
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `workout-tracker-backup-${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     }
 
-    function importJsonFromFile(file){
+    // Wiederherstellen: bestehende Historie wird um importierte Einträge ergänzt
+    // (per id dedupliziert), nicht überschrieben.
+    function importHistoryFromFile(file) {
       const reader = new FileReader();
       reader.onload = () => {
-        try{
-          const parsed = JSON.parse(String(reader.result || "{}"));
-          if(!parsed || !Array.isArray(parsed.workouts)) throw new Error("Invalid format");
-          // basic normalization
-          const workouts = parsed.workouts.map(w => ({
-            id: String(w.id || uid()),
-            name: String(w.name || "Untitled Workout"),
-            createdAt: Number(w.createdAt || Date.now()),
-            exercises: Array.isArray(w.exercises) ? w.exercises.map(ex => ({
-              id: String(ex.id || uid()),
-              name: String(ex.name || ""),
-              reps: (ex.reps === null || ex.reps === undefined || ex.reps === "") ? null : Math.max(0, Math.floor(Number(ex.reps))),
-              weight: (ex.weight === null || ex.weight === undefined || ex.weight === "") ? null : Math.max(0, Number(String(ex.weight).replace(",", ".")))
-            })) : []
-          }));
-          state = { workouts, selectedId: null };
-          saveState();
-          showList();
-          alert("Import erfolgreich.");
-        }catch{
-          alert("Import fehlgeschlagen: Datei ist kein gültiger Export.");
+        try {
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          const migrated = migrate(parsed);
+          const existing = loadSessions();
+          const byId = new Map(existing.map(s => [s.id, s]));
+          migrated.sessions.forEach(s => byId.set(s.id, s));
+          saveSessions([...byId.values()]);
+          alert('✓ Historie wiederhergestellt.');
+          renderHistory();
+        } catch {
+          alert('Import fehlgeschlagen: Datei ist kein gültiges Backup.');
         }
       };
       reader.readAsText(file);
     }
 
-    /**********************
-     * Event Wiring
-     **********************/
-    btnNewWorkout.addEventListener("click", openModal);
-
-    btnModalCancel.addEventListener("click", closeModal);
-    btnModalCreate.addEventListener("click", () => {
-      createWorkout(newWorkoutNameInput.value);
-      closeModal();
+    document.getElementById('btnExport').addEventListener('click', exportHistory);
+    document.getElementById('btnImport').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importHistoryFromFile(file);
+      e.target.value = '';
     });
 
-    modalOverlay.addEventListener("click", (e) => {
-      if(e.target === modalOverlay) closeModal();
-    });
-
-    newWorkoutNameInput.addEventListener("keydown", (e) => {
-      if(e.key === "Enter"){
-        e.preventDefault();
-        createWorkout(newWorkoutNameInput.value);
-        closeModal();
-      } else if(e.key === "Escape"){
-        e.preventDefault();
-        closeModal();
-      }
-    });
-
-    btnBack.addEventListener("click", showList);
-    btnAddExercise.addEventListener("click", addExercise);
-    btnDeleteWorkout.addEventListener("click", deleteSelectedWorkout);
-
-    workoutNameInput.addEventListener("input", () => {
-      const w = getSelectedWorkout();
-      if(!w) return;
-      w.name = workoutNameInput.value;
-      saveState();
-      renderList();
-    });
-
-    btnReset.addEventListener("click", resetAll);
-    btnExport.addEventListener("click", exportJson);
-    btnImport.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", () => {
-      const f = fileInput.files && fileInput.files[0];
-      if(f) importJsonFromFile(f);
-      fileInput.value = "";
-    });
-
-    // Keyboard shortcuts
-    document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape"){
-        if(!modalOverlay.classList.contains("hidden")){
-          closeModal();
-        } else if(!screenEditor.classList.contains("hidden")){
-          showList();
-        }
-      }
-    });
-
-    /**********************
-     * Initial Render
-     **********************/
-    (function init(){
-      renderList();
-      // If there was a selected workout previously, open it (nice UX)
-      const maybe = getSelectedWorkout();
-      if(maybe) showEditor(maybe.id);
-    })();
+    // Best effort: Browser bitten, den Storage nicht unter Speicherdruck zu
+    // räumen (v.a. iOS Safari kann localStorage sonst automatisch leeren).
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
   </script>
 </body>
 </html>
