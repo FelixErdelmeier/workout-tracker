@@ -255,6 +255,37 @@
     
     <!-- SCREEN 1: Workout Selection -->
     <section id="screenSelection" class="grid">
+      <div class="card" id="countdownCard">
+        <div class="cardTitle">🎉 Countdown bis Neujahr</div>
+        <div id="countdownDisplay" style="font-size:32px; font-weight:800; letter-spacing:1px; margin-top:8px; font-variant-numeric:tabular-nums;">–</div>
+        <div class="muted" style="font-size:12px; margin-top:4px;">Tage : Stunden : Minuten</div>
+      </div>
+
+      <div class="card" id="wochenplanCard">
+        <div class="cardTitle">📅 Wochenstruktur</div>
+        <div class="muted" style="font-size:12px; margin-bottom:10px;">Uni & Fitness im Überblick</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="text-align:left; color:var(--muted);">
+                <th style="padding:6px 4px; border-bottom:1px solid var(--border);">Tag</th>
+                <th style="padding:6px 4px; border-bottom:1px solid var(--border);">Uni</th>
+                <th style="padding:6px 4px; border-bottom:1px solid var(--border);">Fitness</th>
+              </tr>
+            </thead>
+            <tbody id="wochenplanBody">
+              <tr data-day="1"><td style="padding:7px 4px;">Mo</td><td style="padding:7px 4px;">Numerics of ODEs</td><td style="padding:7px 4px;">Kraft</td></tr>
+              <tr data-day="2"><td style="padding:7px 4px;">Di</td><td style="padding:7px 4px;">Optimization in ML</td><td style="padding:7px 4px;">Cardio</td></tr>
+              <tr data-day="3"><td style="padding:7px 4px;">Mi</td><td style="padding:7px 4px;">Reinforcement Learning 2</td><td style="padding:7px 4px;">Kraft</td></tr>
+              <tr data-day="4"><td style="padding:7px 4px;">Do</td><td style="padding:7px 4px;">Numerics of ODEs</td><td style="padding:7px 4px;">Cardio</td></tr>
+              <tr data-day="5"><td style="padding:7px 4px;">Fr</td><td style="padding:7px 4px;">Optimization in ML</td><td style="padding:7px 4px;">Kraft</td></tr>
+              <tr data-day="6"><td style="padding:7px 4px;">Sa</td><td style="padding:7px 4px;">RL 2 (+ optional DL)</td><td style="padding:7px 4px;">optional Cardio</td></tr>
+              <tr data-day="0"><td style="padding:7px 4px;">So</td><td style="padding:7px 4px;">Puffer / Wiederholung</td><td style="padding:7px 4px;">Ruhetag</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="selectionHeader">
           <div>
@@ -348,6 +379,41 @@
         { name: 'Waden', sets: 4 }
       ]
     };
+
+    // Countdown bis Neujahr (Tage:Stunden:Minuten)
+    function getNextNewYear() {
+      const now = new Date();
+      let year = now.getFullYear();
+      const jan1ThisYear = new Date(year, 0, 1, 0, 0, 0);
+      if (now >= jan1ThisYear) year += 1;
+      return new Date(year, 0, 1, 0, 0, 0);
+    }
+
+    function updateCountdown() {
+      const diffMs = Math.max(0, getNextNewYear() - new Date());
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const days = Math.floor(totalMinutes / (60 * 24));
+      const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+      const minutes = totalMinutes % 60;
+      const pad = n => String(n).padStart(2, '0');
+      const el = document.getElementById('countdownDisplay');
+      if (el) el.textContent = `${days}:${pad(hours)}:${pad(minutes)}`;
+    }
+
+    // Heutigen Tag in der Wochenplan-Tabelle hervorheben
+    function highlightToday() {
+      const today = new Date().getDay(); // 0=So ... 6=Sa
+      document.querySelectorAll('#wochenplanBody tr').forEach(row => {
+        if (Number(row.dataset.day) === today) {
+          row.style.background = 'rgba(94,234,212,.10)';
+          row.style.borderLeft = '2px solid var(--accent)';
+        }
+      });
+    }
+
+    updateCountdown();
+    highlightToday();
+    setInterval(updateCountdown, 30000);
 
     let currentWorkoutType = null;
     let sessionData = {};
